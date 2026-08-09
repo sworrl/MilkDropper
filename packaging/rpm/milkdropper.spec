@@ -70,6 +70,14 @@ cmake --build projectm-build %{?_smp_mflags}
 DESTDIR=$PWD/projectm-stage cmake --install projectm-build
 
 # 2. QML renderer plugin, linked against the stage, RPATH'd to the final prefix
+#
+# PKG_CONFIG_SYSROOT_DIR rewrites *every* resolved package's paths into the
+# stage — including the system 'opengl' package that projectM-4.pc Requires.
+# CMake refuses imported targets whose include dirs don't exist, so mirror the
+# system include/lib roots inside the stage.
+mkdir -p projectm-stage/usr/include \
+         projectm-stage%{_libdir} \
+         projectm-stage%{_includedir}
 export PKG_CONFIG_PATH=$PWD/projectm-stage/usr/lib/milkdropper/lib/pkgconfig
 export PKG_CONFIG_SYSROOT_DIR=$PWD/projectm-stage
 cmake -S qml-plugin -B qml-plugin/build \
