@@ -90,8 +90,22 @@ def find_textures():
     return _first(candidates, os.path.isdir)
 
 
+def find_pipedreams():
+    """Locate the PipeDreams launcher (sister project), or "" if not installed."""
+    candidates = [
+        os.environ.get("MILKDROPPER_PIPEDREAMS", ""),
+        _configured("PipeDreams"),
+        shutil.which("pipedreams") or "",
+        "/usr/local/bin/pipedreams",
+        "/usr/bin/pipedreams",
+        f"{HOME}/.local/bin/pipedreams",
+    ]
+    return _first(candidates, lambda p: os.path.isfile(p) and os.access(p, os.X_OK))
+
+
 if __name__ == "__main__":
     print(f"config:     {CONFIG_FILE}{'' if os.path.exists(CONFIG_FILE) else ' (absent)'}")
     print(f"projectMSDL: {find_projectmsdl() or '(not found)'}")
     print(f"presets:     {find_presets() or '(not found)'}")
     print(f"textures:    {find_textures() or '(not found)'}")
+    print(f"pipedreams:  {find_pipedreams() or '(not found)'}")

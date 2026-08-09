@@ -1,3 +1,15 @@
+milkdropper (1.2.0-1) unstable; urgency=medium
+
+  * Sister-project interop with PipeDreams (github.com/sworrl/pipedreams):
+    - "Open PipeDreams" tray entry when PipeDreams is installed.
+    - Single-instance socket is now message-based: "ping" returns version and
+      mode without popping the menu, so sister apps can probe liveness safely.
+    - The shared control contract is documented in docs/INTEROP.md.
+  * High-detail app icon at all hicolor sizes; desktop entries, notifications
+    and window icon use it (tray mode-state icons remain SVG).
+
+ -- reaver <agent.jearl@gmail.com>  Sun, 09 Aug 2026 14:45:00 +0000
+
 milkdropper (1.1.0-1) unstable; urgency=medium
 
   * Single-instance guard: launching MilkDropper while it is already running

@@ -127,6 +127,19 @@ If MilkDropper is useful to you, **the engine is where the magic is**: [star it]
 
 Presets are *programs*, and the ones you'll watch were written by a community of artists across two decades — names like Flexi, Geiss, Rovastar, Krash, martin, Aderrasi, Eo.S., Zylot, shifter, cope, stahlregen and hundreds more live in the preset filenames themselves. When a visual blows your mind, the filename tells you who to thank. MilkDropper ships no presets; the packs above carry the authors' work and credits.
 
+### Sister project: PipeDreams
+
+**[PipeDreams](https://github.com/sworrl/pipedreams)** is MilkDropper's sister
+project — a PyQt6 audio control center for PipeWire: real-time spectrum
+analysis, a 10-band parametric EQ, device routing, and its own arsenal of
+visualization modes. The two are **independent** (install either alone) but
+**fully interoperable**: PipeDreams' MilkDropper tab remote-controls the
+wallpaper (presets, lock, launch) and hands its selected capture device to the
+renderer, and MilkDropper's tray gains an "Open PipeDreams" entry when it's
+installed. The contract they share is one page:
+[`docs/INTEROP.md`](docs/INTEROP.md) — two files in `/tmp` and a local socket,
+no imports, no coupling.
+
 ### Not affiliated
 
 MilkDropper is an **independent, unofficial** project. It is not affiliated with, maintained by, or endorsed by the projectM team, Ryan Geiss, Nullsoft, or Winamp. Please **do not report MilkDropper bugs to the projectM project** — anything broken here is on us until proven otherwise.

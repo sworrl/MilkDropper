@@ -27,6 +27,8 @@ RGB_SCRIPT = os.path.join(SCRIPT_DIR, "rgb-music.py")
 ORIGINAL_WALLPAPER = "org.kde.image"
 PROJECTM_WALLPAPER = "org.projectm.wallpaper"
 
+__version__ = "1.2.0"
+
 # Local-socket name for the single-instance handshake. Per-user because the
 # socket lives in the user's runtime dir.
 INSTANCE_KEY = "milkdropper-tray"
@@ -271,6 +273,18 @@ class TrayController(QSystemTrayIcon):
 
         menu.addSeparator()
 
+        # Sister project: PipeDreams (audio control center). Shown only when
+        # installed — the repos are independent and neither requires the other.
+        pipedreams_bin = paths.find_pipedreams()
+        if pipedreams_bin:
+            pd_action = QAction("Open PipeDreams", menu)
+            pd_action.setToolTip("PipeDreams — audio control center (sister project)")
+            pd_action.triggered.connect(
+                lambda checked, b=pipedreams_bin: subprocess.Popen(
+                    [b], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+            menu.addAction(pd_action)
+            menu.addSeparator()
+
         self.rgb_action = QAction("RGB Music Sync", menu)
         self.rgb_action.setCheckable(True)
         self.rgb_action.triggered.connect(self._toggle_rgb_sync)
@@ -291,16 +305,27 @@ class TrayController(QSystemTrayIcon):
         auto_detect_audio_source(self._audio_detected.emit)
 
     def _on_second_instance(self):
+        # Message-based, not connection-based: sister apps (PipeDreams) probe
+        # this socket with "ping" to see if we're running — that must NOT pop
+        # the menu in the user's face. Only an explicit "show-menu" does.
         while self._instance_server.hasPendingConnections():
             conn = self._instance_server.nextPendingConnection()
-            conn.close()
-            conn.deleteLater()
-        # The user tried to start MilkDropper again — show them the running
-        # instance instead. The menu pops at the cursor; on Wayland the
-        # compositor decides final placement, but it is always shown.
-        menu = self.contextMenu()
-        if menu:
-            menu.popup(QCursor.pos())
+            conn.readyRead.connect(lambda c=conn: self._handle_instance_message(c))
+            conn.disconnected.connect(conn.deleteLater)
+
+    def _handle_instance_message(self, conn):
+        msg = bytes(conn.readAll()).strip()
+        if msg == b"show-menu":
+            # Second launch by the user — show the running instance's menu.
+            # It pops at the cursor; on Wayland the compositor decides final
+            # placement, but it is always shown.
+            menu = self.contextMenu()
+            if menu:
+                menu.popup(QCursor.pos())
+        elif msg == b"ping":
+            conn.write(f"milkdropper {__version__} mode={self.current_mode}\n".encode())
+            conn.flush()
+        conn.disconnectFromServer()
 
     def _on_audio_detected(self, source_name):
         if get_current_source():

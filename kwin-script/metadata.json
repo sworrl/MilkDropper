@@ -3,7 +3,7 @@
         "Id": "projectm-wallpaper",
         "Name": "MilkDropper Wallpaper",
         "Description": "Sends projectMSDL window to the desktop layer behind icons and widgets",
-        "Version": "1.1.0",
+        "Version": "1.2.0",
         "Authors": [{ "Name": "reaver" }]
     },
     "KPackageStructure": "KWin/Script",

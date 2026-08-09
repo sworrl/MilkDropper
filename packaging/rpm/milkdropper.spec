@@ -11,7 +11,7 @@
 %global __requires_exclude ^libprojectM-4.*$
 
 Name:           milkdropper
-Version:        1.1.0
+Version:        1.2.0
 Release:        1%{?dist}
 Summary:        KDE Plasma controller for the projectM MilkDrop visualiser
 License:        MIT AND LGPL-2.1-or-later
@@ -120,6 +120,10 @@ rm -rf %{buildroot}/usr/share/licenses/milkdropper
 /usr/lib/milkdropper/
 
 %changelog
+* Sun Aug 09 2026 reaver <agent.jearl@gmail.com> - 1.2.0-1
+- PipeDreams sister-project interop (tray entry, probe-safe ping socket, INTEROP.md)
+- High-detail app icon at all hicolor sizes
+
 * Sun Aug 09 2026 reaver <agent.jearl@gmail.com> - 1.1.0-1
 - Single-instance guard: a second launch opens the running instance's menu
 - Multi-monitor fix: preset commands now reach every screen's renderer
