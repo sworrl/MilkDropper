@@ -41,5 +41,5 @@ case "$MODE" in
         ;;
 esac
 
-notify-send -a "MilkDropper" -i "milkdropper-controller" \
+notify-send -a "MilkDropper" -i "milkdropper" \
     "MilkDropper" "$label" -t 1500

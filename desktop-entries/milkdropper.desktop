@@ -2,7 +2,7 @@
 Name=MilkDropper
 Comment=System tray controller for MilkDropper visualizer modes
 Exec=milkdropper
-Icon=milkdropper-controller
+Icon=milkdropper
 Terminal=false
 Type=Application
 Categories=AudioVideo;Audio;Music;

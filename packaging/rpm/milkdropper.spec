@@ -113,7 +113,7 @@ rm -rf %{buildroot}/usr/share/licenses/milkdropper
 %{_datadir}/applications/milkdropper.desktop
 %{_datadir}/applications/milkdropper-cycle-mode.desktop
 %{_datadir}/icons/hicolor/scalable/apps/milkdropper*.svg
-%{_datadir}/icons/hicolor/512x512/apps/milkdropper.png
+%{_datadir}/icons/hicolor/*/apps/milkdropper.png
 %{_datadir}/plasma/wallpapers/org.projectm.wallpaper/
 %{_datadir}/kwin/scripts/projectm-wallpaper/
 %{_libdir}/qt6/qml/org/projectm/

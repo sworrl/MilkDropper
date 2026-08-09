@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <img src="icons/scalable/milkdropper.svg" width="128" height="128" alt="MilkDropper icon"/>
+  <img src="icons/milkdropper-512.png" width="160" height="160" alt="MilkDropper icon — a crystal eyedropper dripping into psychedelic MilkDrop swirls"/>
   <br>
   MilkDropper
   <br>
@@ -71,11 +71,25 @@ MilkDropper sits in your system tray and manages three modes of the projectM vis
 
 <div align="center">
 
-| The renderer at work | GLES pipeline |
+**Desktop mode** — projectM as the live wallpaper, behind icons and under windows, with the tray menu open:
+
+![Desktop mode: a spiral MilkDrop preset as the Plasma wallpaper, tray menu open with per-device audio routing](docs/screenshot-desktop-mode.png)
+
+![Desktop mode: a glitch-art MilkDrop preset as the Plasma wallpaper, preset controls open](docs/screenshot-desktop-mode-2.png)
+
+**The tray menus** — mode switching, per-device audio routing, and preset controls:
+
+| Audio routing | Preset controls |
+|---|---|
+| ![Tray menu with the Audio Source submenu listing PipeWire monitor devices](docs/menu-audio-routing.png) | ![Tray menu with the Presets submenu: random, next, previous, lock](docs/menu-presets.png) |
+
+**The renderer up close:**
+
+| Windowed | GLES pipeline |
 |---|---|
 | ![A MilkDrop preset rendered by projectM through MilkDropper's Qt Quick plugin](docs/screenshot-desktop-gl.png) | ![The same renderer on an OpenGL ES context](docs/screenshot-gles.png) |
 
-*Every frame in these screenshots was drawn by [projectM](https://github.com/projectM-visualizer/projectm). MilkDropper's contribution is the window it's drawn in.*
+*Every visual in these screenshots was drawn by [projectM](https://github.com/projectM-visualizer/projectm). MilkDropper's contribution is the desktop it's drawn on.*
 
 </div>
 

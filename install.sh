@@ -113,11 +113,14 @@ inst 755 "$SRC/controller/launch-wallpaper.sh" "$PREFIX/bin/milkdropper"
 inst 755 "$SRC/controller/cycle-mode.sh"       "$PREFIX/bin/milkdropper-cycle-mode"
 
 say "Installing icons"
+# Tray/state icons stay SVG; the app identity icon is the high-detail PNG art.
 for svg in "$SRC"/icons/scalable/*.svg; do
     inst 644 "$svg" "$PREFIX/share/icons/hicolor/scalable/apps/$(basename "$svg")"
 done
-[ -f "$SRC/icons/milkdropper-512.png" ] && \
-    inst 644 "$SRC/icons/milkdropper-512.png" "$PREFIX/share/icons/hicolor/512x512/apps/milkdropper.png"
+for size in 512 256 128 64 48 32; do
+    png="$SRC/icons/milkdropper-$size.png"
+    [ -f "$png" ] && inst 644 "$png" "$PREFIX/share/icons/hicolor/${size}x${size}/apps/milkdropper.png"
+done
 
 say "Installing desktop entries"
 for d in "$SRC"/desktop-entries/*.desktop; do

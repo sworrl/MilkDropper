@@ -84,7 +84,7 @@ def warn_if_not_opengl():
     if backend == "opengl":
         return
     subprocess.Popen(
-        ["notify-send", "-a", "MilkDropper", "-i", "milkdropper-controller",
+        ["notify-send", "-a", "MilkDropper", "-i", "milkdropper",
          "-u", "critical", "MilkDropper",
          f"Desktop mode needs Plasma's Qt Quick backend on OpenGL "
          f"(currently '{backend or 'default'}').\n\n"
@@ -174,7 +174,7 @@ def start_projectm_standard():
     binary = paths.find_projectmsdl()
     if not binary:
         subprocess.Popen(
-            ["notify-send", "-a", "MilkDropper", "-i", "milkdropper-controller",
+            ["notify-send", "-a", "MilkDropper", "-i", "milkdropper",
              "MilkDropper", "projectMSDL not found \u2014 install it, or set "
              "Paths/ProjectMSDL in ~/.config/milkdropper/milkdropper.conf"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -192,14 +192,16 @@ def start_projectm_standard():
 
 
 def load_icon(name):
-    """Load icon by name — theme lookup first, then any XDG data dir."""
+    """Load icon by name — theme lookup first, then any XDG data dir (SVG or PNG)."""
     icon = QIcon.fromTheme(name)
     if not icon.isNull():
         return icon
     for base in paths.data_dirs():
-        path = f"{base}/icons/hicolor/scalable/apps/{name}.svg"
-        if os.path.exists(path):
-            return QIcon(path)
+        for path in (f"{base}/icons/hicolor/scalable/apps/{name}.svg",
+                     f"{base}/icons/hicolor/512x512/apps/{name}.png",
+                     f"{base}/icons/hicolor/256x256/apps/{name}.png"):
+            if os.path.exists(path):
+                return QIcon(path)
     return QIcon()
 
 
@@ -356,7 +358,7 @@ class TrayController(QSystemTrayIcon):
 
         subprocess.Popen(
             ["notify-send", "-a", "MilkDropper",
-             "-i", "milkdropper-controller",
+             "-i", "milkdropper",
              "MilkDropper", MODES[mode]["label"], "-t", "1500"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
@@ -394,7 +396,7 @@ def main():
     app.setQuitOnLastWindowClosed(False)
     app.setApplicationName("MilkDropper")
     app.setDesktopFileName("milkdropper")
-    app.setWindowIcon(load_icon("milkdropper-controller"))
+    app.setWindowIcon(load_icon("milkdropper"))
 
     if poke_running_instance():
         print("MilkDropper is already running — opened its tray menu.")
