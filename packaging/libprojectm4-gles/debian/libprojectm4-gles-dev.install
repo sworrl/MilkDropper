@@ -1,0 +1,4 @@
+usr/lib/milkdropper/include
+usr/lib/milkdropper/lib/lib*.so
+usr/lib/milkdropper/lib/pkgconfig
+usr/lib/milkdropper/lib/cmake

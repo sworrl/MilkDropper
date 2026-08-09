@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=MilkDropper Cycle Mode
+Comment=Cycle MilkDropper between Desktop, Borderless, and Windowed modes (X11 only)
+Exec=milkdropper-cycle-mode
+Icon=milkdropper-controller
+Terminal=false
+Type=Application
+Categories=Utility;
+NoDisplay=true

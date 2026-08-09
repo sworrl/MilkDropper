@@ -1,0 +1,8 @@
+usr/bin
+usr/share/milkdropper
+usr/share/applications
+usr/share/icons
+usr/share/plasma
+usr/share/kwin
+usr/lib/*/qt6/qml/org/projectm
+standalone-libs/usr/lib/milkdropper/lib usr/lib/milkdropper

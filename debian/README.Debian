@@ -1,0 +1,54 @@
+MilkDropper for Debian/Ubuntu
+=============================
+
+Desktop (wallpaper) mode requires an OpenGL scene graph
+-------------------------------------------------------
+
+The wallpaper renderer is a QQuickFramebufferObject, which only works when
+Plasma's Qt Quick scene graph runs on the OpenGL RHI backend. If Plasma is
+running on Vulkan (the default on some drivers, and whatever is recorded in
+kdeglobals), the wallpaper renders nothing at all — silently.
+
+Check the current setting:
+
+    kreadconfig6 --file kdeglobals --group QtQuickRendererSettings \
+        --key SceneGraphBackend
+
+Switch it to OpenGL and restart the shell:
+
+    kwriteconfig6 --file kdeglobals --group QtQuickRendererSettings \
+        --key SceneGraphBackend opengl
+    systemctl --user restart plasma-plasmashell.service
+
+This is a session-wide setting: every KDE Qt Quick application switches
+backend with it, not just the wallpaper. Note that the QSG_RHI_BACKEND
+environment variable does NOT work here — KDE's platform theme calls
+QQuickWindow::setGraphicsApi(), which takes precedence over it.
+
+Standard mode (a projectMSDL window) is unaffected and works on any backend.
+
+Why a private libprojectM
+-------------------------
+
+Qt Quick hands out OpenGL ES contexts on Wayland, and a desktop-GL build of
+libprojectM refuses to initialise on those. MilkDropper therefore links a build
+made with ENABLE_GLES, installed under /usr/lib/milkdropper so it cannot shadow
+a system libprojectM carrying the same SONAME. The plugin locates it by RPATH.
+
+Presets and projectMSDL
+-----------------------
+
+Neither is shipped here. MilkDropper discovers them at runtime, in order:
+
+  1. $MILKDROPPER_PRESET_PATH / $MILKDROPPER_TEXTURE_PATH / $MILKDROPPER_PROJECTMSDL
+  2. ~/.config/milkdropper/milkdropper.conf
+  3. well-known locations, including the Steam build of projectM
+
+To pin them explicitly, create ~/.config/milkdropper/milkdropper.conf:
+
+    [Paths]
+    Presets=/path/to/presets
+    Textures=/path/to/textures
+    ProjectMSDL=/path/to/projectMSDL
+
+Run `python3 /usr/share/milkdropper/milkdropper_paths.py` to see what is found.

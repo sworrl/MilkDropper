@@ -1,0 +1,46 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/architecture.mk
+
+# The GLES libprojectM lives in a private prefix so it cannot shadow a system
+# libprojectM with the same SONAME. The plugin finds it via RPATH.
+PROJECTM_PRIVATE_PREFIX := /usr/lib/milkdropper
+QML_DIR := /usr/lib/$(DEB_HOST_MULTIARCH)/qt6/qml
+
+%:
+	dh $@
+
+# The build happens inside install.sh, which also stages the tree. It must run
+# in the install step, not the build step: dh_prep wipes debian/tmp in between.
+override_dh_auto_build:
+
+# install.sh is the single source of truth for the install layout — reusing it
+# here keeps the .deb and the from-source install from drifting apart.
+override_dh_auto_install:
+	PREFIX=/usr \
+	DESTDIR=$(CURDIR)/debian/tmp \
+	QML_INSTALL_DIR=$(QML_DIR) \
+	PROJECTM_PRIVATE_PREFIX=$(PROJECTM_PRIVATE_PREFIX) \
+	    ./install.sh
+	# The standalone variant additionally carries the GLES libprojectM itself.
+	install -d debian/tmp/standalone-libs$(PROJECTM_PRIVATE_PREFIX)/lib
+	cp -a $(PROJECTM_PRIVATE_PREFIX)/lib/libprojectM-4.so.* \
+	      $(PROJECTM_PRIVATE_PREFIX)/lib/libprojectM-4-playlist.so.* \
+	      debian/tmp/standalone-libs$(PROJECTM_PRIVATE_PREFIX)/lib/
+
+override_dh_auto_clean:
+	rm -rf qml-plugin/build debian/tmp
+	dh_auto_clean
+
+# The bundled libprojectM is deliberately outside the default linker path.
+# Exclude the packages that ship it from generated dependencies: otherwise
+# shlibdeps resolves libprojectM-4.so.4 to a sibling binary package and makes
+# milkdropper depend on milkdropper-standalone. The real dependency on
+# libprojectm4-gles is declared by hand in debian/control.
+override_dh_shlibdeps:
+	dh_shlibdeps -l$(PROJECTM_PRIVATE_PREFIX)/lib -- \
+		-xmilkdropper -xmilkdropper-standalone -xlibprojectm4-gles
+
+# Private, unversioned-consumer library: no shlibs control file wanted.
+override_dh_makeshlibs:
+	dh_makeshlibs --no-scripts

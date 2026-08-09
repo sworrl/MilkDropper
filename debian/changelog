@@ -1,0 +1,24 @@
+milkdropper (1.1.0-1) unstable; urgency=medium
+
+  * Single-instance guard: launching MilkDropper while it is already running
+    now opens the running instance's tray menu instead of starting a duplicate.
+  * Multi-monitor fix: preset/audio commands now reach the renderer on every
+    screen (the command file was consumed by whichever screen polled first).
+  * RGB music sync now auto-starts its FFT audio server (audio-fft.py) —
+    previously it silently synced to permanent silence.
+  * audio-fft.py: bind errors are fatal instead of silent; parec is respawned
+    if it dies; capture-window.py moved off the FFT server's port.
+  * milkdropper-cycle-mode works from the installed location; X11 mode state
+    directory is created on demand.
+  * Tray: prompt SIGTERM handling (wallpaper is restored on kill/logout),
+    qdbus6 fallback, OpenRGB discovered from PATH before the custom build.
+
+ -- reaver <agent.jearl@gmail.com>  Sun, 09 Aug 2026 14:00:00 +0000
+
+milkdropper (1.0.0-1) unstable; urgency=medium
+
+  * Initial Debian packaging.
+  * Renderer ported from the libprojectM 3.x C++ API to the projectM 4 C API.
+  * All machine-specific paths replaced with runtime discovery.
+
+ -- reaver <agent.jearl@gmail.com>  Sat, 08 Aug 2026 14:40:00 +0000

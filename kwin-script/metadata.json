@@ -1,0 +1,12 @@
+{
+    "KPlugin": {
+        "Id": "projectm-wallpaper",
+        "Name": "MilkDropper Wallpaper",
+        "Description": "Sends projectMSDL window to the desktop layer behind icons and widgets",
+        "Version": "1.1.0",
+        "Authors": [{ "Name": "reaver" }]
+    },
+    "KPackageStructure": "KWin/Script",
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}

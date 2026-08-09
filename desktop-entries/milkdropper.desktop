@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=MilkDropper
+Comment=System tray controller for MilkDropper visualizer modes
+Exec=milkdropper
+Icon=milkdropper-controller
+Terminal=false
+Type=Application
+Categories=AudioVideo;Audio;Music;
+Keywords=visualizer;milkdrop;projectM;wallpaper;

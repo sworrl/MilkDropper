@@ -1,0 +1,61 @@
+Source: milkdropper
+Section: kde
+Priority: optional
+Maintainer: reaver <agent.jearl@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.20),
+               pkg-config,
+               qt6-base-dev,
+               qt6-declarative-dev,
+               libpulse-dev,
+               libprojectm4-gles-dev,
+               python3
+Standards-Version: 4.6.2
+Homepage: https://github.com/reaver/projectM_Controller
+Rules-Requires-Root: no
+
+Package: milkdropper
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         libprojectm4-gles,
+         python3,
+         python3-pyqt6,
+         plasma-workspace,
+         libpulse0,
+         pulseaudio-utils
+Recommends: projectm
+Suggests: python3-openrgb, openrgb, python3-numpy
+Description: KDE Plasma controller for the projectM MilkDrop visualiser
+ MilkDropper sits in the system tray and manages the projectM music visualiser
+ in three modes: as a live Plasma wallpaper rendered behind desktop icons, as a
+ standalone projectMSDL window, or off.
+ .
+ The wallpaper mode is a native Qt Quick renderer that drives libprojectM
+ directly and captures system audio through PipeWire/PulseAudio. The tray menu
+ exposes per-source audio routing and preset controls (next, previous, random,
+ lock).
+ .
+ Desktop mode requires Plasma's Qt Quick scene graph to run on OpenGL; see
+ /usr/share/doc/milkdropper/README.Debian for how to enable it.
+
+Package: milkdropper-standalone
+Architecture: any
+Conflicts: milkdropper, libprojectm4-gles
+Replaces: milkdropper, libprojectm4-gles
+Provides: milkdropper
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         python3,
+         python3-pyqt6,
+         plasma-workspace,
+         libpulse0,
+         pulseaudio-utils
+Recommends: projectm
+Suggests: python3-openrgb, openrgb, python3-numpy
+Description: KDE Plasma controller for projectM (self-contained build)
+ Identical to the milkdropper package, but ships its own copy of the OpenGL ES
+ build of libprojectM 4 instead of depending on libprojectm4-gles.
+ .
+ Use this variant when installing a single .deb by hand on a system that has no
+ access to the libprojectm4-gles package.

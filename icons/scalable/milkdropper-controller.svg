@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#2a1a4e"/>
+      <stop offset="100%" stop-color="#080618"/>
+    </radialGradient>
+    <radialGradient id="drop" cx="45%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#c8a8ff"/>
+      <stop offset="40%" stop-color="#9d4edd"/>
+      <stop offset="100%" stop-color="#5a0fa0"/>
+    </radialGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="dropglow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <circle cx="64" cy="64" r="62" fill="url(#bg)"/>
+  <ellipse cx="64" cy="88" rx="34" ry="8" fill="none" stroke="#00d4ff" stroke-width="1.5" opacity="0.5"/>
+  <ellipse cx="64" cy="88" rx="22" ry="5" fill="none" stroke="#9d4edd" stroke-width="1" opacity="0.6"/>
+  <ellipse cx="64" cy="88" rx="44" ry="11" fill="none" stroke="#ff2d95" stroke-width="1" opacity="0.3"/>
+  <rect x="20" y="85" width="88" height="2" rx="1" fill="#9d4edd" opacity="0.5"/>
+  <g filter="url(#dropglow)">
+    <path d="M64 22 C64 22,40 52,40 68 C40 80.5,51 88,64 88 C77 88,88 80.5,88 68 C88 52,64 22,64 22 Z"
+          fill="url(#drop)"/>
+    <ellipse cx="56" cy="52" rx="7" ry="10" fill="white" opacity="0.25" transform="rotate(-15,56,52)"/>
+    <ellipse cx="54" cy="46" rx="3" ry="4" fill="white" opacity="0.4" transform="rotate(-15,54,46)"/>
+  </g>
+  <g filter="url(#glow)" opacity="0.9">
+    <circle cx="44" cy="80" r="3.5" fill="#00d4ff"/>
+    <circle cx="84" cy="78" r="2.5" fill="#ff2d95"/>
+    <circle cx="38" cy="72" r="1.8" fill="#9d4edd"/>
+    <circle cx="91" cy="69" r="1.5" fill="#00d4ff"/>
+    <circle cx="50" cy="93" r="2" fill="#ff2d95"/>
+    <circle cx="78" cy="94" r="1.5" fill="#9d4edd"/>
+  </g>
+  <circle cx="64" cy="64" r="62" fill="none" stroke="#9d4edd" stroke-width="1.5" opacity="0.5"/>
+</svg>

@@ -1,0 +1,5 @@
+libprojectm4-gles (4.2.0-1) unstable; urgency=medium
+
+  * GLES build of projectM 4.2.0 for MilkDropper (git master snapshot 2f24414).
+
+ -- reaver <agent.jearl@gmail.com>  Sat, 08 Aug 2026 14:35:00 +0000

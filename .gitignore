@@ -1,0 +1,36 @@
+# Build output
+qml-plugin/build/
+*.o
+*.so
+
+# Debian build artifacts (dpkg-buildpackage writes packages to the parent dir)
+debian/tmp/
+debian/.debhelper/
+debian/files
+debian/*.substvars
+debian/*.debhelper.log
+debian/debhelper-build-stamp
+debian/milkdropper/
+debian/milkdropper-standalone/
+
+# RPM build artifacts
+packaging/rpm/build/
+
+# Packages
+*.deb
+*.ddeb
+*.rpm
+*.buildinfo
+*.changes
+
+# Not part of the project — legacy Fedora source package
+libprojectM-*.src.rpm
+
+# Python
+__pycache__/
+*.py[co]
+
+# Editors
+*.swp
+.idea/
+.vscode/

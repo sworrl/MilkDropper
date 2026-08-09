@@ -1,0 +1,11 @@
+{
+    "KPlugin": {
+        "Id": "org.projectm.wallpaper",
+        "Name": "MilkDropper",
+        "Description": "Live music visualizer wallpaper powered by projectM / MilkDrop",
+        "Authors": [{ "Name": "reaver" }],
+        "Version": "1.1.0"
+    },
+    "KPackageStructure": "Plasma/Wallpaper",
+    "X-Plasma-API": "declarativeappletscript"
+}

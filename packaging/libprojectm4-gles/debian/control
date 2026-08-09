@@ -1,0 +1,36 @@
+Source: libprojectm4-gles
+Section: libs
+Priority: optional
+Maintainer: reaver <agent.jearl@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.21),
+               libgles-dev,
+               libgl-dev,
+               pkg-config
+Standards-Version: 4.6.2
+Homepage: https://github.com/projectM-visualizer/projectm
+Rules-Requires-Root: no
+
+Package: libprojectm4-gles
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: projectM 4 MilkDrop visualiser library, OpenGL ES build
+ libprojectM is an OpenGL implementation of the MilkDrop music visualiser.
+ .
+ This package contains a build configured with ENABLE_GLES, because Qt Quick
+ hands out OpenGL ES contexts on Wayland and the desktop-GL build refuses to
+ initialise there.
+ .
+ It installs into the private prefix /usr/lib/milkdropper so that it cannot
+ collide with a system libprojectM carrying the same SONAME. It is not
+ registered with ldconfig; consumers find it via RPATH.
+
+Package: libprojectm4-gles-dev
+Section: libdevel
+Architecture: any
+Depends: libprojectm4-gles (= ${binary:Version}), ${misc:Depends}
+Description: projectM 4 MilkDrop visualiser library, OpenGL ES build (development)
+ Headers, pkg-config files and CMake config for the OpenGL ES build of
+ libprojectM 4 installed under /usr/lib/milkdropper.
+ .
+ Needed to build the MilkDropper Plasma wallpaper renderer.
