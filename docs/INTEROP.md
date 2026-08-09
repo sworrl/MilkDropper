@@ -45,6 +45,12 @@ To retarget MilkDropper's capture: write the source name, then write
 `reload-audio` to the command channel. This is how PipeDreams hands its
 selected capture device to the wallpaper.
 
+**Ordering guarantee:** the renderer reads this file *at reconnect time* —
+that is, while processing `reload-audio` — never earlier. Write
+source-file-then-command-file and the reconnect always picks up the new
+source; there is no window in which `reload-audio` can act on the old value.
+This ordering is part of the protocol and will not change within v1.
+
 ## 3. Liveness & handoff — local socket `milkdropper-tray`
 
 MilkDropper's tray listens on a `QLocalSocket` named `milkdropper-tray`
