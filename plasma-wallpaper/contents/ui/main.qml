@@ -14,10 +14,7 @@ WallpaperItem {
     ProjectMItem {
         id: visualizer
         anchors.fill: parent
-        // presetPath/texturePath are deliberately not set here: the plugin
-        // discovers them (env override, ~/.config/milkdropper/milkdropper.conf,
-        // then the usual install locations). Hardcoding a path here would break
-        // every machine but the one it was written on.
+        screenIndex: (typeof wallpaper !== "undefined" && wallpaper.screen !== undefined) ? wallpaper.screen : 0
         fps: 60
         meshX: 64
         meshY: 36

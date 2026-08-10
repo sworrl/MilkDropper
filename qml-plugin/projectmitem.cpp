@@ -37,14 +37,32 @@ void AudioCapture::run() {
         spec.rate = 44100;
         spec.channels = 2;
 
-        // Resolve source: explicit /tmp/projectm-audio-source, else default sink monitor
+        pa_buffer_attr attr{};
+        attr.maxlength = (uint32_t) -1;
+        attr.tlength = (uint32_t) -1;
+        attr.prebuf = (uint32_t) -1;
+        attr.minreq = (uint32_t) -1;
+        attr.fragsize = 1024 * sizeof(float); // Low-latency fragment size (~11.6ms)
+
+        // Resolve source: per-screen /tmp/projectm-audio-source-<screen>, explicit /tmp/projectm-audio-source, else default sink monitor
         char device_buf[256] = {};
-        QFile srcFile("/tmp/projectm-audio-source");
-        if (srcFile.exists() && srcFile.open(QIODevice::ReadOnly)) {
-            QByteArray src = srcFile.readAll().trimmed();
+        const int sIdx = m_screenIndex.load();
+        QString perScreenSrc = QString("/tmp/projectm-audio-source-%1").arg(sIdx);
+        QFile perScreenFile(perScreenSrc);
+        if (perScreenFile.exists() && perScreenFile.open(QIODevice::ReadOnly)) {
+            QByteArray src = perScreenFile.readAll().trimmed();
             if (!src.isEmpty())
                 qstrncpy(device_buf, src.constData(), sizeof(device_buf));
-            srcFile.close();
+            perScreenFile.close();
+        }
+        if (!device_buf[0]) {
+            QFile srcFile("/tmp/projectm-audio-source");
+            if (srcFile.exists() && srcFile.open(QIODevice::ReadOnly)) {
+                QByteArray src = srcFile.readAll().trimmed();
+                if (!src.isEmpty())
+                    qstrncpy(device_buf, src.constData(), sizeof(device_buf));
+                srcFile.close();
+            }
         }
         if (!device_buf[0]) {
             if (FILE *fp = popen("pactl get-default-sink", "r")) {
@@ -60,29 +78,29 @@ void AudioCapture::run() {
             }
         }
         const char *device = device_buf[0] ? device_buf : nullptr;
-        qInfo("AudioCapture: connecting to %s", device ? device : "(default)");
+        qInfo("AudioCapture [Screen %d]: connecting to %s", sIdx, device ? device : "(default)");
 
         int error = 0;
         pa_simple *pa = pa_simple_new(
             nullptr, "projectM-wallpaper",
             PA_STREAM_RECORD, device,
             "Audio Visualizer", &spec,
-            nullptr, nullptr, &error
+            nullptr, &attr, &error
         );
 
         if (!pa) {
-            qWarning("AudioCapture: pa_simple_new failed (%s): %s",
-                     device ? device : "default", pa_strerror(error));
+            qWarning("AudioCapture [Screen %d]: pa_simple_new failed (%s): %s",
+                     sIdx, device ? device : "default", pa_strerror(error));
             QThread::msleep(1000);
             continue;
         }
-        qInfo("AudioCapture: stream open, capturing");
+        qInfo("AudioCapture [Screen %d]: stream open, capturing", sIdx);
 
         float samples[1024];
 
         while (m_running && !m_restartRequested) {
             if (pa_simple_read(pa, samples, sizeof(samples), &error) < 0) {
-                qWarning("AudioCapture: pa_simple_read failed: %s", pa_strerror(error));
+                qWarning("AudioCapture [Screen %d]: pa_simple_read failed: %s", sIdx, pa_strerror(error));
                 break;
             }
 
@@ -100,7 +118,7 @@ void AudioCapture::run() {
 
         pa_simple_free(pa);
         if (m_restartRequested)
-            qInfo("AudioCapture: restart requested, reconnecting");
+            qInfo("AudioCapture [Screen %d]: restart requested, reconnecting", sIdx);
     }
 }
 
@@ -111,6 +129,13 @@ int AudioCapture::available() const {
 }
 
 int AudioCapture::read(float *out, int maxFloats) {
+    QMutexLocker lock(&mutex);
+    int avail = available();
+    // Flush any accumulated audio backlog to maintain real-time low latency (<30ms)
+    if (avail > 2048) {
+        int drop = avail - 1024;
+        readPos = (readPos + drop) % kRingSize;
+    }
     int n = 0;
     while (n < maxFloats && readPos != writePos) {
         out[n++] = ring[readPos];
@@ -451,6 +476,15 @@ QQuickFramebufferObject::Renderer *ProjectMItem::createRenderer() const {
     return new ProjectMRenderer();
 }
 
+void ProjectMItem::setScreenIndex(int idx) {
+    if (m_screenIndex != idx) {
+        m_screenIndex = idx;
+        m_audio.setScreenIndex(idx);
+        emit screenIndexChanged();
+        update();
+    }
+}
+
 void ProjectMItem::setPresetPath(const QString &path) {
     if (m_presetPath != path) {
         m_presetPath = path;
@@ -539,10 +573,6 @@ void ProjectMItem::lockPreset(bool locked) {
 }
 
 void ProjectMItem::pollCommandFile() {
-    // The file is NOT deleted after reading: with one ProjectMItem per screen,
-    // deleting meant whichever instance polled first consumed the command and
-    // the other screens never saw it. Instead every instance keeps its own
-    // last-processed mtime and each new write is seen by all of them.
     static const char *PATH = "/tmp/projectm-cmd";
     QFileInfo fi(PATH);
     if (!fi.exists()) return;
@@ -552,15 +582,38 @@ void ProjectMItem::pollCommandFile() {
 
     QFile f(PATH);
     if (!f.open(QIODevice::ReadOnly)) return;
-    QByteArray data = f.readAll().trimmed();
+    QByteArray rawData = f.readAll().trimmed();
     f.close();
 
-    qInfo("ProjectMItem: command '%s'", data.constData());
+    if (rawData.isEmpty()) return;
 
-    if (data == "next")        nextPreset();
-    else if (data == "prev")   prevPreset();
-    else if (data == "random") randomPreset();
-    else if (data == "lock")   lockPreset(true);
-    else if (data == "unlock") lockPreset(false);
-    else if (data == "reload-audio") m_audio.requestRestart();
+    QString cmdStr = QString::fromUtf8(rawData);
+    int targetScreen = -1; // -1 means all screens
+    QString action = cmdStr;
+
+    if (cmdStr.contains(':')) {
+        QStringList parts = cmdStr.split(':');
+        bool ok = false;
+        int sIdx = parts[0].toInt(&ok);
+        if (ok) {
+            targetScreen = sIdx;
+            action = parts.mid(1).join(':');
+        } else if (parts[0] == "all") {
+            targetScreen = -1;
+            action = parts.mid(1).join(':');
+        }
+    }
+
+    if (targetScreen != -1 && targetScreen != m_screenIndex) {
+        return; // Command is targeted at a different screen
+    }
+
+    qInfo("ProjectMItem [Screen %d]: command '%s'", m_screenIndex, qPrintable(action));
+
+    if (action == "next")        nextPreset();
+    else if (action == "prev")   prevPreset();
+    else if (action == "random") randomPreset();
+    else if (action == "lock")   lockPreset(true);
+    else if (action == "unlock") lockPreset(false);
+    else if (action == "reload-audio") m_audio.requestRestart();
 }

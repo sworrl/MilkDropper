@@ -58,6 +58,67 @@ def run(cmd, **kw):
     return subprocess.run(cmd, shell=True, capture_output=True, text=True, **kw)
 
 
+def get_connected_screens():
+    """Return list of dicts describing active screens."""
+    screens = []
+    qt_screens = QGuiApplication.screens()
+    for idx, scr in enumerate(qt_screens):
+        name = scr.name()
+        label = f"Screen {idx} ({name})"
+        screens.append({"index": idx, "name": name, "label": label})
+    if not screens:
+        screens = [{"index": 0, "name": "Default", "label": "Screen 0"}]
+    return screens
+
+
+def plasma_get_desktop_wallpapers():
+    """Return dict of screen_index -> wallpaperPlugin."""
+    result = run(f"""{QDBUS} org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "
+        var d = desktops(); var res = [];
+        for (var i = 0; i < d.length; i++) res.push(d[i].screen + ':' + d[i].wallpaperPlugin);
+        print(res.join(';'));
+    " """)
+    mapping = {}
+    if result.stdout.strip():
+        for item in result.stdout.strip().split(";"):
+            if ":" in item:
+                parts = item.split(":", 1)
+                try:
+                    mapping[int(parts[0])] = parts[1].strip()
+                except ValueError:
+                    pass
+    return mapping
+
+
+def plasma_set_screen_wallpaper(screen_index, plugin):
+    """Set wallpaper plugin for a specific screen index."""
+    run(f"""{QDBUS} org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "
+        var d = desktops();
+        for (var i = 0; i < d.length; i++) {{
+            if (d[i].screen == {screen_index}) d[i].wallpaperPlugin = '{plugin}';
+        }}
+    " """)
+
+
+def get_screen_audio_source(screen_index):
+    try:
+        with open(f"/tmp/projectm-audio-source-{screen_index}") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return ""
+
+
+def set_screen_audio_source(screen_index, name):
+    filepath = f"/tmp/projectm-audio-source-{screen_index}"
+    if name:
+        with open(filepath, "w") as f:
+            f.write(name)
+    else:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+    send_wallpaper_cmd(f"{screen_index}:reload-audio")
+
+
 def plasma_get_wallpaper():
     result = run(f"""{QDBUS} org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "
         var d = desktops(); print(d[0].wallpaperPlugin);
@@ -145,7 +206,6 @@ def set_audio_source(name):
         send_wallpaper_cmd("reload-audio")
 
 
-
 def auto_detect_audio_source(on_found):
     """Background thread: find the active audio monitor and call on_found(name).
 
@@ -221,16 +281,13 @@ class TrayController(QSystemTrayIcon):
         super().__init__()
         self._rgb_proc = None
 
-        # Single-instance server: a second launch connects here and we pop the
-        # menu instead of letting a duplicate tray icon start.
-        QLocalServer.removeServer(INSTANCE_KEY)  # clear stale socket after a crash
+        QLocalServer.removeServer(INSTANCE_KEY)
         self._instance_server = QLocalServer(self)
         self._instance_server.newConnection.connect(self._on_second_instance)
         if not self._instance_server.listen(INSTANCE_KEY):
             print(f"warning: single-instance socket unavailable: "
                   f"{self._instance_server.errorString()}", file=sys.stderr)
 
-        # Detect current state
         current_wp = plasma_get_wallpaper()
         if current_wp == PROJECTM_WALLPAPER:
             self.current_mode = "desktop"
@@ -251,25 +308,20 @@ class TrayController(QSystemTrayIcon):
             menu.addAction(action)
 
         self.mode_actions[self.current_mode].setChecked(True)
+
+        # Per-screen Desktop Mode toggle sub-menu
+        self.screen_mode_menu = menu.addMenu("Per-Screen Mode")
+        self.screen_mode_menu.aboutToShow.connect(self._populate_screen_mode_menu)
+
         menu.addSeparator()
 
         # Audio Source submenu (dynamic — refreshes on open)
         self.audio_menu = menu.addMenu("Audio Source")
         self.audio_menu.aboutToShow.connect(self._populate_audio_menu)
 
-        # Preset controls
+        # Preset controls (Global + Per-Screen)
         self.preset_menu = menu.addMenu("Presets")
-        for label, cmd in [("Random", "random"), ("Next", "next"), ("Previous", "prev")]:
-            a = QAction(label, self.preset_menu)
-            a.triggered.connect(lambda checked, c=cmd: send_wallpaper_cmd(c))
-            self.preset_menu.addAction(a)
-        self.preset_menu.addSeparator()
-        lock_a = QAction("Lock current", self.preset_menu)
-        lock_a.triggered.connect(lambda: send_wallpaper_cmd("lock"))
-        self.preset_menu.addAction(lock_a)
-        unlock_a = QAction("Unlock", self.preset_menu)
-        unlock_a.triggered.connect(lambda: send_wallpaper_cmd("unlock"))
-        self.preset_menu.addAction(unlock_a)
+        self.preset_menu.aboutToShow.connect(self._populate_preset_menu)
 
         menu.addSeparator()
 
@@ -332,24 +384,118 @@ class TrayController(QSystemTrayIcon):
             return
         set_audio_source(source_name)
 
+    def _populate_screen_mode_menu(self):
+        self.screen_mode_menu.clear()
+        screens = get_connected_screens()
+        wallpapers = plasma_get_desktop_wallpapers()
+
+        for s in screens:
+            s_idx = s["index"]
+            label = s["label"]
+            current_wp = wallpapers.get(s_idx, plasma_get_wallpaper())
+            is_desktop = (current_wp == PROJECTM_WALLPAPER)
+
+            sm = self.screen_mode_menu.addMenu(label)
+
+            on_act = QAction("Desktop Mode", sm)
+            on_act.setCheckable(True)
+            on_act.setChecked(is_desktop)
+            on_act.triggered.connect(lambda checked, idx=s_idx: self._set_single_screen_mode(idx, True))
+            sm.addAction(on_act)
+
+            off_act = QAction("Off (Normal Wallpaper)", sm)
+            off_act.setCheckable(True)
+            off_act.setChecked(not is_desktop)
+            off_act.triggered.connect(lambda checked, idx=s_idx: self._set_single_screen_mode(idx, False))
+            sm.addAction(off_act)
+
+    def _set_single_screen_mode(self, screen_index, enable):
+        plugin = PROJECTM_WALLPAPER if enable else ORIGINAL_WALLPAPER
+        warn_if_not_opengl()
+        plasma_set_screen_wallpaper(screen_index, plugin)
+        if enable:
+            send_wallpaper_cmd(f"{screen_index}:reload-audio")
+
+    def _populate_preset_menu(self):
+        self.preset_menu.clear()
+        screens = get_connected_screens()
+
+        # Global (All Screens)
+        for label, cmd in [("Random", "all:random"), ("Next", "all:next"), ("Previous", "all:prev")]:
+            a = QAction(f"{label} (All Screens)", self.preset_menu)
+            a.triggered.connect(lambda checked, c=cmd: send_wallpaper_cmd(c))
+            self.preset_menu.addAction(a)
+
+        lock_a = QAction("Lock (All Screens)", self.preset_menu)
+        lock_a.triggered.connect(lambda: send_wallpaper_cmd("all:lock"))
+        self.preset_menu.addAction(lock_a)
+
+        unlock_a = QAction("Unlock (All Screens)", self.preset_menu)
+        unlock_a.triggered.connect(lambda: send_wallpaper_cmd("all:unlock"))
+        self.preset_menu.addAction(unlock_a)
+
+        if len(screens) > 1:
+            self.preset_menu.addSeparator()
+            for s in screens:
+                s_idx = s["index"]
+                label = s["label"]
+                sm = self.preset_menu.addMenu(label)
+
+                for p_label, cmd in [("Random", f"{s_idx}:random"), ("Next", f"{s_idx}:next"), ("Previous", f"{s_idx}:prev")]:
+                    a = QAction(p_label, sm)
+                    a.triggered.connect(lambda checked, c=cmd: send_wallpaper_cmd(c))
+                    sm.addAction(a)
+                sm.addSeparator()
+                la = QAction("Lock current", sm)
+                la.triggered.connect(lambda checked, idx=s_idx: send_wallpaper_cmd(f"{idx}:lock"))
+                sm.addAction(la)
+                ula = QAction("Unlock", sm)
+                ula.triggered.connect(lambda checked, idx=s_idx: send_wallpaper_cmd(f"{idx}:unlock"))
+                sm.addAction(ula)
+
     def _populate_audio_menu(self):
         self.audio_menu.clear()
-        current = get_current_source()
+        global_current = get_current_source()
         sources = list_audio_sources()
+        screens = get_connected_screens()
 
-        auto_a = QAction("Auto (default sink monitor)", self.audio_menu)
+        global_menu = self.audio_menu.addMenu("Global (All Screens)") if len(screens) > 1 else self.audio_menu
+
+        auto_a = QAction("Auto (default sink monitor)", global_menu)
         auto_a.setCheckable(True)
-        auto_a.setChecked(current == "")
+        auto_a.setChecked(global_current == "")
         auto_a.triggered.connect(lambda: set_audio_source(""))
-        self.audio_menu.addAction(auto_a)
-        self.audio_menu.addSeparator()
+        global_menu.addAction(auto_a)
+        global_menu.addSeparator()
 
         for name, desc in sources:
-            a = QAction(desc, self.audio_menu)
+            a = QAction(desc, global_menu)
             a.setCheckable(True)
-            a.setChecked(name == current)
+            a.setChecked(name == global_current)
             a.triggered.connect(lambda checked, n=name: set_audio_source(n))
-            self.audio_menu.addAction(a)
+            global_menu.addAction(a)
+
+        if len(screens) > 1:
+            self.audio_menu.addSeparator()
+            for s in screens:
+                s_idx = s["index"]
+                label = s["label"]
+                s_current = get_screen_audio_source(s_idx)
+                sm = self.audio_menu.addMenu(f"{label} Audio")
+
+                def_a = QAction("Use Global Setting", sm)
+                def_a.setCheckable(True)
+                def_a.setChecked(s_current == "")
+                def_a.triggered.connect(lambda checked, idx=s_idx: set_screen_audio_source(idx, ""))
+                sm.addAction(def_a)
+                sm.addSeparator()
+
+                for name, desc in sources:
+                    a = QAction(desc, sm)
+                    a.setCheckable(True)
+                    a.setChecked(name == s_current)
+                    a.triggered.connect(lambda checked, idx=s_idx, n=name: set_screen_audio_source(idx, n))
+                    sm.addAction(a)
 
     def _update_icon(self):
         self.setIcon(load_icon(MODES[self.current_mode]["icon"]))

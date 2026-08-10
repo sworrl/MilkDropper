@@ -18,6 +18,7 @@ public:
     ~AudioCapture();
     void stop();
     void requestRestart() { m_restartRequested = true; }
+    void setScreenIndex(int idx) { m_screenIndex = idx; }
 
     // Ring buffer of interleaved stereo PCM (L,R,L,R,...)
     QMutex mutex;
@@ -37,6 +38,7 @@ protected:
 private:
     std::atomic<bool> m_running{true};
     std::atomic<bool> m_restartRequested{false};
+    std::atomic<int> m_screenIndex{0};
 };
 
 
@@ -81,14 +83,7 @@ class ProjectMItem : public QQuickFramebufferObject {
     Q_OBJECT
     QML_ELEMENT
 
-    Q_PROPERTY(QString presetPath READ presetPath WRITE setPresetPath NOTIFY presetPathChanged)
-    Q_PROPERTY(QString texturePath READ texturePath WRITE setTexturePath NOTIFY texturePathChanged)
-    Q_PROPERTY(int fps READ fps WRITE setFps NOTIFY fpsChanged)
-    Q_PROPERTY(int meshX READ meshX WRITE setMeshX NOTIFY meshXChanged)
-    Q_PROPERTY(int meshY READ meshY WRITE setMeshY NOTIFY meshYChanged)
-    Q_PROPERTY(int presetDuration READ presetDuration WRITE setPresetDuration NOTIFY presetDurationChanged)
-    Q_PROPERTY(bool shuffle READ shuffle WRITE setShuffle NOTIFY shuffleChanged)
-    Q_PROPERTY(bool hardCutEnabled READ hardCutEnabled WRITE setHardCutEnabled NOTIFY hardCutEnabledChanged)
+    Q_PROPERTY(int screenIndex READ screenIndex WRITE setScreenIndex NOTIFY screenIndexChanged)
 
 public:
     explicit ProjectMItem(QQuickItem *parent = nullptr);
@@ -109,6 +104,9 @@ protected:
     void itemChange(ItemChange change, const ItemChangeData &value) override;
 
 public:
+    int screenIndex() const { return m_screenIndex; }
+    void setScreenIndex(int idx);
+
     QString presetPath() const { return m_presetPath; }
     void setPresetPath(const QString &path);
 
@@ -146,6 +144,7 @@ public:
     QList<Command> pendingCmds;
 
 signals:
+    void screenIndexChanged();
     void presetPathChanged();
     void texturePathChanged();
     void fpsChanged();
@@ -158,6 +157,7 @@ signals:
 private:
     void queueCommand(const Command &cmd);
 
+    int m_screenIndex = 0;
     QString m_presetPath;
     QString m_texturePath;
     int m_fps = 60;
